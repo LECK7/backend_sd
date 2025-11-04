@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/////////////////////////////////////////
+// ENUMS
+/////////////////////////////////////////
+
+enum RolUsuario {
+  ADMIN
+  EMPLEADO
+}
+
+enum EstadoVenta {
+  PENDIENTE
+  COMPLETADA
+  ANULADA
+}
+
+enum TipoMovimientoInventario {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+/////////////////////////////////////////
+// MODELOS
+/////////////////////////////////////////
+
+model Usuario {
+  id        String     @id @default(cuid())
+  nombre    String
+  email     String     @unique
+  telefono  String?
+  rol       RolUsuario @default(EMPLEADO)
+  password  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // relaciones
+  ventas                 Venta[]
+  movimientosFinancieros MovimientoFinanciero[]
+}
+
+model Producto {
+  id          String   @id @default(cuid())
+  codigo      String?  @unique
+  nombre      String
+  descripcion String?
+  precio      Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // relaciones
+  items       ItemVenta[]
+  movimientos MovimientoInventario[]
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String?  @unique
+  telefono  String?
+  direccion String?
+  createdAt DateTime @default(now())
+
+  // relaciones
+  ventas Venta[]
+}
+
+model Venta {
+  id         String      @id @default(cuid())
+  codigo     String?     @unique
+  cliente    Cliente?    @relation(fields: [clienteId], references: [id])
+  clienteId  String?
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id])
+  usuarioId  String
+  total      Decimal     @db.Decimal(12, 2)
+  estado     EstadoVenta @default(COMPLETADA)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  motivoAnul String?
+
+  // relaciones
+  items ItemVenta[]
+}
+
+model ItemVenta {
+  id         String   @id @default(cuid())
+  venta      Venta    @relation(fields: [ventaId], references: [id])
+  ventaId    String
+  producto   Producto @relation(fields: [productoId], references: [id])
+  productoId String
+  cantidad   Int
+  precioUnit Decimal  @db.Decimal(10, 2)
+  subtotal   Decimal  @db.Decimal(12, 2)
+}
+
+model MovimientoInventario {
+  id               String                   @id @default(cuid())
+  producto         Producto                 @relation(fields: [productoId], references: [id])
+  productoId       String
+  cantidad         Int
+  tipo             TipoMovimientoInventario
+  motivo           String?
+  ventaRelacionada String?
+  creadoPor        String?
+  createdAt        DateTime                 @default(now())
+}
+
+model MovimientoFinanciero {
+  id          String                   @id @default(cuid())
+  tipo        TipoMovimientoFinanciero
+  monto       Decimal                  @db.Decimal(10, 2)
+  descripcion String?
+  fecha       DateTime                 @default(now())
+  usuarioId   String
+  usuario     Usuario                  @relation(fields: [usuarioId], references: [id])
+}
+
+enum TipoMovimientoFinanciero {
+  INGRESO
+  EGRESO
+}
