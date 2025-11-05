@@ -2,9 +2,13 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function main() {
   console.log('Insertando datos iniciales...');
+
+  console.log('Esperando 3 segundos para asegurar que las tablas se crearon...');
+  await delay(3000);
 
   const hashedPassword = await bcrypt.hash('123456', 10);
   const admin = await prisma.usuario.upsert({

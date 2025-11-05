@@ -4,21 +4,26 @@ import { requireAuth, requireRole } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// Listar productos (público para consumo del frontend)
-router.get('/', async (req, res) => {
-  const productos = await prisma.producto.findMany({ where: { activo: true }, orderBy: { nombre: 'asc' } });
-  res.json(productos);
+router.get('/', requireAuth, requireRole(['ADMIN', 'PRODUCCION','VENDEDOR']), async (req, res) => {
+  try {
+    const productos = await prisma.producto.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' }
+    });
+    res.json(productos);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener los productos' });
+  }
 });
 
-// Obtener producto por id
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAuth, requireRole(['ADMIN', 'PRODUCCION','VENDEDOR']), async (req, res) => {
   const { id } = req.params;
   const producto = await prisma.producto.findUnique({ where: { id } });
   if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
   res.json(producto);
 });
 
-// Crear producto (requiere auth)
+// Crear producto
 router.post('/', requireAuth, requireRole('ADMIN'), async (req, res) => {
   try {
     const { codigo, nombre, descripcion, precio, stock, activo } = req.body;
@@ -44,11 +49,36 @@ router.put('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   }
 });
 
-// Eliminar (soft) -> marcar activo=false
+// Eliminar producto
 router.delete('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const { id } = req.params;
   await prisma.producto.update({ where: { id }, data: { activo: false } });
   res.json({ ok: true });
+});
+
+// Actualizar stock (ADMIN o PRODUCCION)
+router.put("/:id/stock", requireAuth, requireRole(['PRODUCCION', 'ADMIN']), async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { cantidadAAgregar } = req.body;
+
+    if (typeof cantidadAAgregar !== 'number' || cantidadAAgregar <= 0 || !Number.isInteger(cantidadAAgregar)) {
+      return res.status(400).json({ error: "La cantidad a agregar debe ser un número entero positivo." });
+    }
+
+    const productoActualizado = await prisma.producto.update({
+      where: { id },
+      data: { stock: { increment: cantidadAAgregar } },
+      select: { id: true, nombre: true, stock: true },
+    });
+
+    res.json(productoActualizado);
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+    res.status(400).json({ error: err.message });
+  }
 });
 
 export default router;

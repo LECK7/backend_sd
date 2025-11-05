@@ -13,7 +13,8 @@ datasource db {
 
 enum RolUsuario {
   ADMIN
-  EMPLEADO
+  VENDEDOR
+  PRODUCCION
 }
 
 enum EstadoVenta {
@@ -37,7 +38,7 @@ model Usuario {
   nombre    String
   email     String     @unique
   telefono  String?
-  rol       RolUsuario @default(EMPLEADO)
+  rol       RolUsuario @default(VENDEDOR)
   password  String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -128,4 +129,7 @@ model MovimientoFinanciero {
 enum TipoMovimientoFinanciero {
   INGRESO
   EGRESO
+  VENTA
+  COMPRA
+  GASTO
 }

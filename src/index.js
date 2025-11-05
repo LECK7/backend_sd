@@ -6,12 +6,14 @@ dotenv.config();
 import authRoutes from './routes/auth.js';
 import productosRoutes from './routes/productos.js';
 import ventasRoutes from './routes/ventas.js';
+import usuariosRoutes from "./routes/usuarios.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use("/api/usuarios", usuariosRoutes);
 app.use('/api/productos', productosRoutes);
 app.use('/api/ventas', ventasRoutes);
 
