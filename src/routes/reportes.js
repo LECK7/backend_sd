@@ -10,25 +10,38 @@ const router = express.Router();
 router.get("/resumen-general", requireAuth, async (req, res) => {
   try {
     // ===========================
-    // 🧾 1️⃣ Ventas agrupadas por día
+    // 🗓️ 0️⃣ Fechas de hoy
     // ===========================
-    const ventasPorDia = await prisma.venta.groupBy({
-      by: ["createdAt"],
-      _sum: { total: true },
-      orderBy: { createdAt: "asc" },
-    });
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const mañana = new Date(hoy);
+    mañana.setDate(hoy.getDate() + 1);
+
+    // ===========================
+    // 🧾 1️⃣ Ventas agrupadas por día (más limpio)
+    // ===========================
+    const ventasPorDia = await prisma.$queryRaw`
+      SELECT 
+        DATE("createdAt") AS fecha, 
+        SUM("total")::numeric AS total
+      FROM "Venta"
+      WHERE "createdAt" >= ${hoy} AND "createdAt" < ${mañana}
+      GROUP BY DATE("createdAt")
+      ORDER BY fecha ASC;
+    `;
 
     const ventasFormateadas = ventasPorDia.map(v => ({
-      createdAt: v.createdAt,
-      _sum: { total: Number(v._sum.total || 0) },
+      fecha: v.fecha,
+      total: Number(v.total || 0),
     }));
 
     // ===========================
-    // 🛒 2️⃣ Productos más vendidos
+    // 🛒 2️⃣ Productos más vendidos del día
     // ===========================
     const productosMasVendidos = await prisma.itemVenta.groupBy({
       by: ["productoId"],
       _sum: { cantidad: true, subtotal: true },
+      where: { venta: { createdAt: { gte: hoy, lt: mañana } } },
       orderBy: { _sum: { cantidad: "desc" } },
       take: 10,
     });
@@ -50,9 +63,12 @@ router.get("/resumen-general", requireAuth, async (req, res) => {
     });
 
     // ===========================
-    // 💰 3️⃣ Finanzas (Ingresos y Egresos)
+    // 💰 3️⃣ Finanzas (solo de hoy)
     // ===========================
-    const movimientos = await prisma.movimientoFinanciero.findMany();
+    const movimientos = await prisma.movimientoFinanciero.findMany({
+      where: { fecha: { gte: hoy, lt: mañana } },
+      orderBy: { fecha: "asc" },
+    });
 
     const totalIngresos = movimientos
       .filter(m => m.tipo === "INGRESO")
@@ -68,12 +84,13 @@ router.get("/resumen-general", requireAuth, async (req, res) => {
     // 📤 4️⃣ Respuesta final
     // ===========================
     res.json({
+      fecha: hoy,
       ventasPorDia: ventasFormateadas,
       productosMasVendidos: productosFinal,
       finanzas: {
-        ingresos: totalIngresos,
-        egresos: totalEgresos,
-        balance,
+        ingresos: Number(totalIngresos.toFixed(2)),
+        egresos: Number(totalEgresos.toFixed(2)),
+        balance: Number(balance.toFixed(2)),
       },
     });
   } catch (err) {

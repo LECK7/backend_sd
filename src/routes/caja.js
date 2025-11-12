@@ -19,11 +19,14 @@ router.get(
       const ventasHoy = await prisma.venta.findMany({
         where: { createdAt: { gte: hoy, lt: mañana }, estado: "COMPLETADA" },
         include: {
+          cliente: true,
+          usuario: true,
           items: {
             include: { producto: true },
           },
         },
       });
+
 
       // Calcular ingresos
       const ingresos = ventasHoy.reduce(
@@ -53,9 +56,13 @@ router.get(
 
       const ventas = ventasHoy.flatMap((venta) =>
         venta.items.map((i) => ({
+          cliente: venta.cliente?.nombre || "Venta rápida",
           producto: i.producto?.nombre || "Producto",
-          cantidad: i.cantidad,
-          total: Number(i.subtotal),
+          cantidad: Number(i.cantidad) || 0,
+          precioUnit: Number(i.precioUnit) || 0,
+          total: Number(i.subtotal) || 0,
+          metodoPago: venta.metodoPago || "Efectivo",
+          esCredito: !!venta.esCredito,
         }))
       );
 
