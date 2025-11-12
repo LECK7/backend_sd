@@ -59,7 +59,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Seed completo: admin + cliente + producto + stock inicial');
+  console.log(' Seed completo: admin + cliente + producto + stock inicial');
 }
 
 main()

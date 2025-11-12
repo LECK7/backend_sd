@@ -11,6 +11,7 @@ router.get('/', requireAuth, requireRole(['ADMIN', 'PRODUCCION','VENDEDOR']), as
       orderBy: { nombre: 'asc' }
     });
     res.json(productos);
+    await registrarLog(req, "PRODUCTOS_LISTADOS", `Productos listados por ${req.user.email}`);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener los productos' });
   }
@@ -31,6 +32,7 @@ router.post('/', requireAuth, requireRole('ADMIN'), async (req, res) => {
       data: { codigo, nombre, descripcion, precio: precio.toString(), stock, activo }
     });
     res.json(producto);
+    await registrarLog(req, "PRODUCTO_CREADO", `Producto ${producto.id} creado por ${req.user.email}`);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -44,6 +46,7 @@ router.put('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
     if (data.precio) data.precio = data.precio.toString();
     const producto = await prisma.producto.update({ where: { id }, data });
     res.json(producto);
+    await registrarLog(req, "PRODUCTO_ACTUALIZADO", `Producto ${producto.id} actualizado por ${req.user.email}`);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -73,6 +76,7 @@ router.put("/:id/stock", requireAuth, requireRole(['PRODUCCION', 'ADMIN']), asyn
     });
 
     res.json(productoActualizado);
+    await registrarLog(req, "PRODUCTO_STOCK_ACTUALIZADO", `Stock de producto ${productoActualizado.id} actualizado por ${req.user.email}`);
   } catch (err) {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: "Producto no encontrado" });

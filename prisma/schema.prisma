@@ -44,6 +44,7 @@ model Usuario {
   updatedAt DateTime   @updatedAt
 
   // relaciones
+  logs       LogSistema[]
   ventas                 Venta[]
   movimientosFinancieros MovimientoFinanciero[]
 }
@@ -85,6 +86,8 @@ model Venta {
   usuarioId  String
   total      Decimal     @db.Decimal(12, 2)
   estado     EstadoVenta @default(COMPLETADA)
+  metodoPago MetodoPago  @default(EFECTIVO)
+  esCredito  Boolean     @default(false)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   motivoAnul String?
@@ -92,6 +95,7 @@ model Venta {
   // relaciones
   items ItemVenta[]
 }
+
 
 model ItemVenta {
   id         String   @id @default(cuid())
@@ -119,6 +123,7 @@ model MovimientoInventario {
 model MovimientoFinanciero {
   id          String                   @id @default(cuid())
   tipo        TipoMovimientoFinanciero
+  categoria   String
   monto       Decimal                  @db.Decimal(10, 2)
   descripcion String?
   fecha       DateTime                 @default(now())
@@ -126,10 +131,23 @@ model MovimientoFinanciero {
   usuario     Usuario                  @relation(fields: [usuarioId], references: [id])
 }
 
+model LogSistema {
+  id        String   @id @default(cuid())
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  accion    String
+  detalles  String?
+  ip        String?
+  fecha     DateTime @default(now())
+}
+
 enum TipoMovimientoFinanciero {
   INGRESO
   EGRESO
-  VENTA
-  COMPRA
-  GASTO
+}
+
+enum MetodoPago {
+  EFECTIVO
+  YAPE
+  TRANSFERENCIA
 }
