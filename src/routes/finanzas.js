@@ -5,16 +5,6 @@ import { registrarLog } from "../middlewares/logger.js";
 
 const router = express.Router();
 
-/**
- * Registrar movimiento financiero manual (ingreso o egreso)
- * Ejemplo body:
- * {
- *   "tipo": "EGRESO",
- *   "categoria": "COMPRA",
- *   "monto": 150.00,
- *   "descripcion": "Compra de harina"
- * }
- */
 router.post("/registrar", requireAuth, requireRole(["ADMIN"]), async (req, res) => {
   try {
     const { tipo, categoria, monto, descripcion } = req.body;
@@ -44,9 +34,6 @@ router.post("/registrar", requireAuth, requireRole(["ADMIN"]), async (req, res) 
   }
 });
 
-/**
- * Listar todos los movimientos financieros
- */
 router.get("/", requireAuth, async (req, res) => {
   try {
     const movimientos = await prisma.movimientoFinanciero.findMany({
@@ -54,7 +41,6 @@ router.get("/", requireAuth, async (req, res) => {
       orderBy: { fecha: "desc" },
     });
 
-    // convertir Decimal -> Number
     const data = movimientos.map((m) => ({
       id: m.id,
       tipo: m.tipo,

@@ -24,7 +24,6 @@ router.get('/:id', requireAuth, requireRole(['ADMIN', 'PRODUCCION','VENDEDOR']),
   res.json(producto);
 });
 
-// Crear producto
 router.post('/', requireAuth, requireRole('ADMIN'), async (req, res) => {
   try {
     const { codigo, nombre, descripcion, precio, stock, activo } = req.body;
@@ -38,7 +37,6 @@ router.post('/', requireAuth, requireRole('ADMIN'), async (req, res) => {
   }
 });
 
-// Actualizar producto
 router.put('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -52,14 +50,12 @@ router.put('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   }
 });
 
-// Eliminar producto
 router.delete('/:id', requireAuth, requireRole('ADMIN'), async (req, res) => {
   const { id } = req.params;
   await prisma.producto.update({ where: { id }, data: { activo: false } });
   res.json({ ok: true });
 });
 
-// Actualizar stock (ADMIN o PRODUCCION)
 router.put("/:id/stock", requireAuth, requireRole(['PRODUCCION', 'ADMIN']), async (req, res) => {
   try {
     const id = req.params.id;

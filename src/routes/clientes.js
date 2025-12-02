@@ -4,10 +4,6 @@ import { requireAuth, requireRole } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-/**
- * ✅ Obtener todos los clientes
- * Roles permitidos: ADMIN, VENDEDOR
- */
 router.get('/', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, res) => {
   try {
     const clientes = await prisma.cliente.findMany({
@@ -20,10 +16,6 @@ router.get('/', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, res
   }
 });
 
-/**
- * ✅ Crear cliente
- * Roles permitidos: ADMIN, VENDEDOR
- */
 router.post('/', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, res) => {
   try {
     const { nombre, email, telefono, direccion } = req.body;
@@ -51,10 +43,6 @@ router.post('/', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, re
   }
 });
 
-/**
- * ✅ Obtener cliente por ID
- * Roles permitidos: ADMIN, VENDEDOR
- */
 router.get('/:id', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, res) => {
   try {
     const { id } = req.params;
@@ -71,10 +59,6 @@ router.get('/:id', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, 
   }
 });
 
-/**
- * ✅ Actualizar cliente
- * Roles permitidos: ADMIN, VENDEDOR
- */
 router.put('/:id', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, res) => {
   try {
     const { id } = req.params;
@@ -95,10 +79,6 @@ router.put('/:id', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, 
   }
 });
 
-/**
- * ✅ Eliminar cliente
- * Roles permitidos: ADMIN, VENDEDOR
- */
 router.delete('/:id', requireAuth, requireRole(['ADMIN', 'VENDEDOR']), async (req, res) => {
   try {
     const { id } = req.params;

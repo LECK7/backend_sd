@@ -5,9 +5,6 @@ import bcrypt from "bcrypt";
 
 const router = express.Router();
 
-// =========================================================
-// MIDDLEWARE DE AUTENTICACIÓN (Función auxiliar)
-// =========================================================
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader)
@@ -23,28 +20,19 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// =========================================================
-// PUT /api/usuarios/:id -> EDITAR USUARIO (SOLO ADMIN)
-// =========================================================
 router.put("/:id", verifyToken, async (req, res) => {
   try {
-    // 1. Verificar si el usuario es ADMINISTRADOR
     if (req.user.rol !== "ADMIN") {
       return res.status(403).json({ error: "Acceso denegado" });
     }
 
-    // El ID es un STRING (cuid) según tu schema.prisma.
     const id = req.params.id;
 
-    // Extraer todos los campos actualizables
     const { nombre, email, password, telefono, rol } = req.body;
     let updateData = { nombre, email, telefono, rol };
 
-    // MUY IMPORTANTE: Evita que el ID del body interfiera.
-    // Aunque el frontend no debería enviarlo, es una buena práctica.
     delete updateData.id;
 
-    // 2. Manejar la contraseña SOLO si se proporciona
     if (password) {
       if (password.length < 6) {
         return res
@@ -80,9 +68,6 @@ router.put("/:id", verifyToken, async (req, res) => {
   }
 });
 
-// =========================================================
-// GET /api/usuarios -> LISTAR USUARIOS (SOLO ADMIN)
-// =========================================================
 router.get("/", verifyToken, async (req, res) => {
   try {
     if (req.user.rol !== "ADMIN")
@@ -104,9 +89,6 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-// =========================================================
-// POST /api/usuarios -> CREAR NUEVO USUARIO (SOLO ADMIN)
-// =========================================================
 router.post("/", verifyToken, async (req, res) => {
   try {
     if (req.user.rol !== "ADMIN")
@@ -114,13 +96,11 @@ router.post("/", verifyToken, async (req, res) => {
 
     const { nombre, email, password, telefono, rol } = req.body;
 
-    // Validar el rol
     const validRoles = ['ADMIN', 'VENDEDOR', 'PRODUCCION'];
     if (!validRoles.includes(rol)) {
       return res.status(400).json({ error: `Rol inválido: ${rol}. Los roles permitidos son: ${validRoles.join(', ')}` });
     }
 
-    // Validar la contraseña
     if (!password || password.length < 6) {
       return res.status(400).json({ error: "La contraseña es requerida y debe tener al menos 6 caracteres." });
     }
@@ -133,11 +113,9 @@ router.post("/", verifyToken, async (req, res) => {
 
     res.json({
       ok: true,
-      // Devolvemos el objeto completo para que el frontend pueda actualizar la lista.
       usuario: { id: nuevoUsuario.id, nombre, email, telefono, rol },
     });
   } catch (err) {
-    // P2002 es código de error de Prisma para clave única duplicada (ej. email)
     if (err.code === "P2002") {
       return res.status(400).json({ error: "El email ya está registrado." });
     }
@@ -145,15 +123,11 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
-// =========================================================
-// DELETE /api/usuarios/:id -> ELIMINAR USUARIO (SOLO ADMIN)
-// =========================================================
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
     if (req.user.rol !== "ADMIN")
       return res.status(403).json({ error: "Acceso denegado" });
 
-    // ID usado como STRING (cuid)
     await prisma.usuario.delete({ where: { id: req.params.id } });
     res.json({ ok: true, message: "Usuario eliminado correctamente" });
   } catch (err) {

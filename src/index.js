@@ -16,7 +16,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-//Rutas principales
 app.use('/api/auth', authRoutes); 
 app.use("/api/usuarios", usuariosRoutes);
 app.use('/api/productos', productosRoutes);

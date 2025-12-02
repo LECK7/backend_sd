@@ -5,9 +5,6 @@ import { registrarLog } from '../middlewares/logger.js';
 
 const router = express.Router();
 
-/**
- * Crear venta
- */
 router.post('/crear', requireAuth, async (req, res) => {
   const userId = req.user.id;
   const { clienteId, items, metodoPago, esCredito } = req.body;
@@ -17,7 +14,6 @@ router.post('/crear', requireAuth, async (req, res) => {
 
   try {
     const venta = await prisma.$transaction(async (tx) => {
-      // --- Validar stock y calcular total ---
       let total = 0;
       for (const it of items) {
         const prod = await tx.producto.findUnique({ where: { id: it.productoId } });
@@ -26,19 +22,17 @@ router.post('/crear', requireAuth, async (req, res) => {
         total += Number(it.cantidad) * Number(it.precioUnit);
       }
 
-      // --- Crear venta principal ---
       const nuevaVenta = await tx.venta.create({
         data: {
           clienteId: clienteId || null,
           usuarioId: userId,
           total: total.toFixed(2),
           estado: 'COMPLETADA',
-          metodoPago: esCredito ? 'EFECTIVO' : metodoPago, // si es crédito, método de pago se ignora
+          metodoPago: esCredito ? 'EFECTIVO' : metodoPago,
           esCredito: esCredito ?? false,
         },
       });
 
-      // --- Crear items, actualizar stock y movimientos ---
       for (const it of items) {
         await tx.itemVenta.create({
           data: {
@@ -67,7 +61,6 @@ router.post('/crear', requireAuth, async (req, res) => {
         });
       }
 
-      // --- Registrar movimiento financiero solo si NO es crédito ---
       if (!esCredito) {
         await tx.movimientoFinanciero.create({
           data: {
@@ -83,7 +76,6 @@ router.post('/crear', requireAuth, async (req, res) => {
       return nuevaVenta;
     });
 
-    // --- Log del sistema ---
     await registrarLog(
       req,
       'VENTA_CREADA',
@@ -97,9 +89,6 @@ router.post('/crear', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * Listar ventas
- */
 router.get('/', requireAuth, async (req, res) => {
   try {
     const ventas = await prisma.venta.findMany({

@@ -4,9 +4,8 @@ import bcrypt from 'bcrypt'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Iniciando seed...')
+  console.log('Iniciando seed...')
 
-  // --- Usuarios ---
   const adminPass = await bcrypt.hash('admin123', 10)
   const vendedorPass = await bcrypt.hash('vendedor123', 10)
 
@@ -34,7 +33,6 @@ async function main() {
     },
   })
 
-  // --- Productos ---
   const productos = await prisma.$transaction([
     prisma.producto.upsert({
       where: { codigo: 'PAN001' },
@@ -71,7 +69,6 @@ async function main() {
     }),
   ])
 
-  // --- Clientes ---
   const clientes = await prisma.$transaction([
     prisma.cliente.upsert({
       where: { email: 'maria.lopez@example.com' },
@@ -95,7 +92,6 @@ async function main() {
     }),
   ])
 
-  // --- Ventas ---
   const venta1 = await prisma.venta.create({
     data: {
       codigo: 'V001',
@@ -145,7 +141,6 @@ async function main() {
     },
   })
 
-  // --- Movimientos de inventario ---
   await prisma.$transaction([
     prisma.movimientoInventario.create({
       data: {
@@ -169,7 +164,6 @@ async function main() {
     }),
   ])
 
-  // --- Movimiento financiero ---
   await prisma.movimientoFinanciero.create({
     data: {
       tipo: 'INGRESO',
@@ -180,7 +174,7 @@ async function main() {
     },
   })
 
-  console.log('✅ Seed completado con éxito')
+  console.log('Seed completado con éxito')
 }
 
 main()

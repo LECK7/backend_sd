@@ -27,14 +27,11 @@ router.get(
         },
       });
 
-
-      // Calcular ingresos
       const ingresos = ventasHoy.reduce(
         (acc, venta) => acc + Number(venta.total),
         0
       );
 
-      // Egresos del día
       const movimientos = await prisma.movimientoFinanciero.findMany({
         where: { fecha: { gte: hoy, lt: mañana } },
         orderBy: { fecha: "asc" },
@@ -47,7 +44,6 @@ router.get(
       const balance = ingresos - totalEgresos;
       const redondear = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-      // Formato para frontend
       const resumen = {
         ingresos: redondear(ingresos),
         egresos: redondear(totalEgresos),

@@ -7,7 +7,6 @@ dotenv.config();
 
 const router = express.Router();
 
-// Register (opcional, puedes solo usar seed para admin)
 router.post('/register', async (req, res) => {
   try {
     const { nombre, email, password, telefono, rol } = req.body;
@@ -21,7 +20,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login -> devuelve JWT
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
