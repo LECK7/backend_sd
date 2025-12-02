@@ -81,4 +81,57 @@ router.get("/resumen-general", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/ventas-por-dia", requireAuth, async (req, res) => {
+  try {
+    const datos = await prisma.$queryRaw`
+      SELECT 
+        DATE("createdAt") AS fecha, 
+        SUM("total")::numeric AS total
+      FROM "Venta"
+      GROUP BY DATE("createdAt")
+      ORDER BY fecha ASC;
+    `;
+
+    const resultado = datos.map(v => ({
+      fecha: v.fecha,
+      total: Number(v.total || 0),
+    }));
+
+    res.json(resultado);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/productos-mas-vendidos", requireAuth, async (req, res) => {
+  try {
+    const productos = await prisma.itemVenta.groupBy({
+      by: ["productoId"],
+      _sum: { cantidad: true, subtotal: true },
+      orderBy: { _sum: { cantidad: "desc" } },
+      take: 10
+    });
+
+    const ids = productos.map(p => p.productoId);
+
+    const info = await prisma.producto.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, nombre: true }
+    });
+
+    const resultado = productos.map(p => {
+      const prod = info.find(x => x.id === p.productoId);
+      return {
+        nombre: prod?.nombre || "Desconocido",
+        cantidadVendida: Number(p._sum.cantidad || 0),
+        total: Number(p._sum.subtotal || 0)
+      };
+    });
+
+    res.json(resultado);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
